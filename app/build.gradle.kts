@@ -2,7 +2,9 @@ import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesS
 
 plugins {
   alias(libs.plugins.android.application)
-  alias(libs.plugins.kotlin.android)
+  // AGP 9.x ships built-in Kotlin support; applying the standalone
+  // org.jetbrains.kotlin.android plugin would collide with the built-in
+  // 'kotlin' extension ("Cannot add extension with name 'kotlin'").
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.google.devtools.ksp)
   alias(libs.plugins.roborazzi)
