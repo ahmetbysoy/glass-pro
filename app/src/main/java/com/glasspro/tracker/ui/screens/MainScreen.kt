@@ -31,9 +31,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -144,15 +141,22 @@ fun MainScreen(viewModel: MarketViewModel) {
             )
         },
         bottomBar = {
-            NavigationBar(
-                containerColor = SlateSurface,
-                contentColor = TextPrimary,
-                modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars)
+            Surface(
+                color = SlateSurface,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.navigationBars)
             ) {
-                NavItem(0, "Canlı Akış", Icons.Default.Bolt, selectedTab, viewModel)
-                NavItem(1, "Tahminler", Icons.Default.Psychology, selectedTab, viewModel)
-                NavItem(2, "İstatistik", Icons.Default.BarChart, selectedTab, viewModel)
-                NavItem(3, "Ayarlar", Icons.Default.Settings, selectedTab, viewModel)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    BottomBarItem(0, "Canlı Akış", Icons.Default.Bolt, selectedTab) { viewModel.setSelectedTab(0) }
+                    BottomBarItem(1, "Tahminler", Icons.Default.Psychology, selectedTab) { viewModel.setSelectedTab(1) }
+                    BottomBarItem(2, "İstatistik", Icons.Default.BarChart, selectedTab) { viewModel.setSelectedTab(2) }
+                    BottomBarItem(3, "Ayarlar", Icons.Default.Settings, selectedTab) { viewModel.setSelectedTab(3) }
+                }
             }
         }
     ) { innerPadding ->
@@ -252,25 +256,40 @@ fun MainScreen(viewModel: MarketViewModel) {
     }
 }
 
+/**
+ * Custom bottom navigation item rendered without NavigationBarItem. A plain
+ * clickable row with an icon and label; the selected state is highlighted in
+ * the accent color. Keeping this dependency-light avoids any Material3 API
+ * surface that could be unresolved under the AGP 9 built-in Kotlin toolchain.
+ */
 @Composable
-private fun NavItem(
+private fun BottomBarItem(
     index: Int,
     label: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     selectedTab: Int,
-    viewModel: MarketViewModel
+    onClick: () -> Unit
 ) {
-    NavigationBarItem(
-        selected = selectedTab == index,
-        onClick = { viewModel.setSelectedTab(index) },
-        icon = { Icon(icon, contentDescription = label) },
-        label = { Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
-        colors = NavigationBarItemDefaults.colors(
-            selectedIconColor = ElectricCyan,
-            selectedTextColor = ElectricCyan,
-            indicatorColor = ElectricCyanBg,
-            unselectedIconColor = com.glasspro.tracker.ui.theme.TextMuted,
-            unselectedTextColor = com.glasspro.tracker.ui.theme.TextMuted
+    val selected = selectedTab == index
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = if (selected) ElectricCyan else com.glasspro.tracker.ui.theme.TextMuted,
+            modifier = Modifier.size(22.dp)
         )
-    )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = label,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (selected) ElectricCyan else com.glasspro.tracker.ui.theme.TextMuted
+        )
+    }
 }
