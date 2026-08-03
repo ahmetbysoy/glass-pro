@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -263,7 +264,7 @@ fun MainScreen(viewModel: MarketViewModel) {
  * surface that could be unresolved under the AGP 9 built-in Kotlin toolchain.
  */
 @Composable
-private fun BottomBarItem(
+private fun RowScope.BottomBarItem(
     index: Int,
     label: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
