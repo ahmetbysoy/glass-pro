@@ -117,6 +117,50 @@ class RestClient(private val okHttpClient: OkHttpClient) {
     }
 
     /**
+     * POST returning a JSON array body. Used by Hyperliquid's /info endpoint,
+     * whose metaAndAssetCtxs response is a top-level array
+     * `[universe, assetCtxs]`.
+     */
+    suspend fun postJsonArray(
+        url: String,
+        body: JSONObject,
+        retries: Int = 2
+    ): JSONArray? = withContext(Dispatchers.IO) {
+        var attempt = 0
+        while (attempt <= retries) {
+            try {
+                val request = Request.Builder()
+                    .url(url)
+                    .header("User-Agent", USER_AGENT)
+                    .header("Accept", "application/json")
+                    .post(body.toString().toRequestBody(jsonMediaType))
+                    .build()
+                okHttpClient.newCall(request).execute().use { response ->
+                    val respBody = response.body?.string()
+                    if (!response.isSuccessful || respBody.isNullOrBlank()) {
+                        Log.d(TAG, "POST array ${response.code} $url")
+                        return@use null
+                    }
+                    return@withContext try {
+                        JSONArray(respBody)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "POST array parse failed for $url: ${e.message}")
+                        null
+                    }
+                }
+            } catch (e: Exception) {
+                attempt++
+                if (attempt <= retries) {
+                    Thread.sleep(ATTEMPT_DELAY_MS * attempt)
+                } else {
+                    Log.d(TAG, "POST array failed after retries: $url -> ${e.message}")
+                }
+            }
+        }
+        null
+    }
+
+    /**
      * POST with a JSON body (used by Hyperliquid's /info endpoint).
      */
     suspend fun postJson(

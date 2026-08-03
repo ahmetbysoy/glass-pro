@@ -57,7 +57,8 @@ class MarketDataService(
             async { adapter.exchangeName to adapter.fetchTicker(symbol) }
         }
         val prices = tickerJobs.mapNotNull { it.await() }
-            .mapNotNull { (_, t) -> t.last }
+            .filter { it.second != null }
+            .mapNotNull { (_, t) -> t!!.last }
         if (prices.isEmpty()) return@coroutineScope null
         val median = Stats.median(prices) ?: return@coroutineScope null
         val accepted = prices.filter { p ->
@@ -73,7 +74,9 @@ class MarketDataService(
         val tickerJobs = adapters.map { adapter ->
             async { adapter.exchangeName to adapter.fetchTicker(symbol) }
         }
-        val tickers = tickerJobs.mapNotNull { it.await() }.toMap()
+        val tickers = tickerJobs.mapNotNull { it.await() }
+            .filter { it.second != null }
+            .associate { it.first to it.second!! }
 
         val prices = tickers.mapNotNull { (_, t) -> t.last }
         if (prices.isEmpty()) {
@@ -112,12 +115,16 @@ class MarketDataService(
         val bookJobs = adapters.map { adapter ->
             async { adapter.exchangeName to adapter.fetchOrderBook(symbol, 200) }
         }
-        val books = bookJobs.mapNotNull { it.await() }.toMap()
+        val books = bookJobs.mapNotNull { it.await() }
+            .filter { it.second != null }
+            .associate { it.first to it.second!! }
 
         val tradeJobs = adapters.map { adapter ->
             async { adapter.exchangeName to adapter.fetchTrades(symbol, 500) }
         }
-        val tradesByVenue = tradeJobs.mapNotNull { it.await() }.toMap()
+        val tradesByVenue = tradeJobs.mapNotNull { it.await() }
+            .filter { it.second != null }
+            .associate { it.first to it.second!! }
         val trades = tradesByVenue.values.flatten().sortedBy { it.timestampNs }
 
         val candleJobs = TFs.map { tf ->
@@ -136,7 +143,9 @@ class MarketDataService(
         val derivJobs = adapters.map { adapter ->
             async { adapter.exchangeName to adapter.fetchDerivativeData(symbol) }
         }
-        val derivatives = derivJobs.mapNotNull { it.await() }.toMap()
+        val derivatives = derivJobs.mapNotNull { it.await() }
+            .filter { it.second != null }
+            .associate { it.first to it.second!! }
 
         val fundingRates = derivatives.mapNotNull { (_, d) -> d.fundingRate?.let { it } }
         val fundingRatePct = Stats.mean(fundingRates)?.let { it * 100.0 }

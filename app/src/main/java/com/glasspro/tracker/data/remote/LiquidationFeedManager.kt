@@ -155,6 +155,8 @@ class LiquidationFeedManager(
                 if (sum > 0.0) totals[symbol] = sum
             }
         }
-        return totals.entries.sortedByDescending { it.value }
+        return totals.entries
+            .sortedByDescending { it.value }
+            .map { it.key to it.value }
     }
 }

@@ -72,9 +72,10 @@ class HyperliquidAdapter(
 
     private suspend fun fetchMetaAndAssetCtxs(): Pair<List<String>, List<JSONObject>>? {
         val body = JSONObject().put("type", "metaAndAssetCtxs")
-        val resp = restClient.postJson(infoUrl, body) ?: return null
-        val universe = resp.optJSONArray(0) ?: return null
-        val ctxs = resp.optJSONArray(1) ?: return null
+        val resp = restClient.postJsonArray(infoUrl, body) ?: return null
+        if (resp.length() < 2) return null
+        val universe = resp.getJSONArray(0)
+        val ctxs = resp.getJSONArray(1)
         val names = mutableListOf<String>()
         for (i in 0 until universe.length()) {
             names.add(universe.optJSONObject(i)?.optString("name", "") ?: "")
@@ -86,7 +87,7 @@ class HyperliquidAdapter(
         return names to ctxList
     }
 
-    private fun ctxFor(symbol: String): JSONObject? {
+    private suspend fun ctxFor(symbol: String): JSONObject? {
         val pair = try {
             fetchMetaAndAssetCtxs() ?: return null
         } catch (e: Exception) {

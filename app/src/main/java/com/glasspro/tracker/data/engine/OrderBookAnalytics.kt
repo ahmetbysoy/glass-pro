@@ -162,8 +162,8 @@ object OrderBookAnalytics {
         tick: Double
     ): Double {
         val band = price * 0.02
-        fun largeLevels(book: OrderBookData): Set<Pair<String, Double>> {
-            val result = mutableSetOf<Pair<String, Double>>()
+        fun largeLevels(book: OrderBookData): Set<Pair<Double, Double>> {
+            val result = mutableSetOf<Pair<Double, Double>>()
             val levels = book.bids + book.asks
             if (levels.isEmpty()) return result
             val mean = levels.map { it.quantity }.average()

@@ -3,6 +3,7 @@ package com.glasspro.tracker.data.engine
 import com.glasspro.tracker.core.math.Stats
 import com.glasspro.tracker.core.model.LiquidationWindow
 import kotlin.math.abs
+import kotlin.math.copySign
 import kotlin.math.max
 
 /**
@@ -65,9 +66,9 @@ object DerivativeAnalytics {
             return OiAnalysis(oiChangePct1h, null)
         }
         val score = if (oiChangePct1h > 0.0) {
-            Stats.clamp(kotlin.math.copySign(20.0 + minOf(55.0, abs(oiChangePct1h) * 3.0), priceChangePct1h))
+            Stats.clamp(copySign(20.0 + minOf(55.0, abs(oiChangePct1h) * 3.0), priceChangePct1h))
         } else {
-            Stats.clamp(kotlin.math.copySign(8.0 + minOf(20.0, abs(oiChangePct1h)), priceChangePct1h))
+            Stats.clamp(copySign(8.0 + minOf(20.0, abs(oiChangePct1h)), priceChangePct1h))
         }
         return OiAnalysis(oiChangePct1h, score)
     }
