@@ -2,10 +2,11 @@ package com.glasspro.tracker.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -400,7 +401,7 @@ fun AnalysisCard(analysis: AnalysisResult) {
 }
 
 @Composable
-private fun ComponentBar(key: String, score: Double, weight: Double) {
+private fun ColumnScope.ComponentBar(key: String, score: Double, weight: Double) {
     val ratio = (score.coerceIn(-100.0, 100.0) + 100.0) / 200.0
     val color = when {
         score >= 20.0 -> NeonGreen
@@ -446,7 +447,7 @@ private fun ComponentBar(key: String, score: Double, weight: Double) {
 }
 
 @Composable
-private fun ProbCell(label: String, value: Double, color: Color) {
+private fun RowScope.ProbCell(label: String, value: Double, color: Color) {
     Surface(
         shape = RoundedCornerShape(8.dp),
         color = SlateSurface,
@@ -468,7 +469,7 @@ private fun ProbCell(label: String, value: Double, color: Color) {
 }
 
 @Composable
-private fun MiniStat(label: String, value: String, color: Color) {
+private fun RowScope.MiniStat(label: String, value: String, color: Color) {
     Surface(
         shape = RoundedCornerShape(8.dp),
         color = SlateSurface,
