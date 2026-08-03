@@ -275,8 +275,11 @@ class OkxAdapter(
         if (lsJson != null) {
             val data = lsJson.optJSONArray("data")
             if (data != null && data.length() > 0) {
-                lsRatio = data.getJSONObject(0).optString(1).let { safeDouble(it) }
-                    ?: data.getJSONObject(0).optDouble("ratio", Double.NaN).takeIf { !it.isNaN() }
+                // Rubik rows are [timestamp, ratio] arrays.
+                val row = data.optJSONArray(0)
+                if (row != null && row.length() > 1) {
+                    lsRatio = safeDouble(row.optString(1))
+                }
             }
         }
 

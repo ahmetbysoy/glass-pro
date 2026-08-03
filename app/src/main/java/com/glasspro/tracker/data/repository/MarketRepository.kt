@@ -260,7 +260,7 @@ class MarketRepository(
     // ------------------------------------------------------------------
 
     private suspend fun verificationLoop() {
-        while (scope.isActive()) {
+        while (scope.isActive) {
             try {
                 val pending = analysisDao.getPending()
                 val now = System.currentTimeMillis()
@@ -344,7 +344,7 @@ class MarketRepository(
     // ------------------------------------------------------------------
 
     private suspend fun strategicLoop() {
-        while (scope.isActive()) {
+        while (scope.isActive) {
             try {
                 val cutoffNs = System.currentTimeMillis() * 1_000_000L - 30 * 60 * 1_000_000_000L
                 val active = activeSymbols.filterValues { it >= cutoffNs }.keys
@@ -651,7 +651,7 @@ object AnalysisMapper {
                 falseBreakout = o.optDouble("falseBreakout"),
                 generalRisk = o.optDouble("general")
             )
-        }.getOrDefault(com.glasspro.tracker.core.model.RiskReport(0, 0, 0, 0, 0, 0, 0))
+        }.getOrDefault(com.glasspro.tracker.core.model.RiskReport(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
     }
 
     private fun parseStrategy(json: String): com.glasspro.tracker.core.model.StrategySignal {

@@ -64,6 +64,14 @@ class WebSocketClient(
     private var onMessage: ((String) -> Unit)? = null
     private var running = false
 
+    /**
+     * True while the underlying WebSocket is open. OkHttp does not expose a
+     * closeCode() on the WebSocket object, so the listener maintains this flag
+     * (set false on close/failure, true again after a successful handshake).
+     */
+    @Volatile
+    private var closed = true
+
     private val lastMessageAtMs = AtomicLong(0L)
 
     fun start(
@@ -130,6 +138,7 @@ class WebSocketClient(
 
         val listener = object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
+                closed = false
                 _state.value = WsConnectionState.SUBSCRIBING
                 val payload = subscribePayload
                 if (payload != null && !webSocket.send(payload)) {
@@ -155,14 +164,17 @@ class WebSocketClient(
             }
 
             override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+                closed = true
                 webSocket.close(1000, null)
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                closed = true
                 Log.i(TAG, "$clientName closed ($code): $reason")
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                closed = true
                 Log.w(TAG, "$clientName failure: ${t.message}")
                 handshake.complete(false)
             }
@@ -178,8 +190,7 @@ class WebSocketClient(
      */
     private suspend fun waitForTermination() {
         while (running) {
-            val s = socket
-            if (s != null && s.closeCode() == -1) {
+            if (!closed) {
                 delay(500L)
             } else {
                 _state.value = WsConnectionState.DISCONNECTED
@@ -205,7 +216,7 @@ class WebSocketClient(
                 delay(protocolPingEveryMs)
                 val payload = protocolPingPayload
                 val ws = socket
-                if (payload != null && ws != null && ws.closeCode() == -1) {
+                if (payload != null && ws != null && !closed) {
                     ws.send(payload)
                 }
             }
@@ -222,6 +233,7 @@ class WebSocketClient(
                 if (age > staleAfterMs && _state.value == WsConnectionState.LIVE) {
                     Log.w(TAG, "$clientName stale: no message for ${age}ms; reconnecting")
                     _state.value = WsConnectionState.STALE
+                    closed = true
                     socket?.close(4000, "stale connection")
                 }
             }

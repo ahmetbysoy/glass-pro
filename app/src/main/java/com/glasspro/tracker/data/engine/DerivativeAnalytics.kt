@@ -66,9 +66,9 @@ object DerivativeAnalytics {
             return OiAnalysis(oiChangePct1h, null)
         }
         val score = if (oiChangePct1h > 0.0) {
-            Stats.clamp(copySign(20.0 + minOf(55.0, abs(oiChangePct1h) * 3.0), priceChangePct1h))
+            Stats.clamp((20.0 + minOf(55.0, abs(oiChangePct1h) * 3.0)).copySign(priceChangePct1h))
         } else {
-            Stats.clamp(copySign(8.0 + minOf(20.0, abs(oiChangePct1h)), priceChangePct1h))
+            Stats.clamp((8.0 + minOf(20.0, abs(oiChangePct1h))).copySign(priceChangePct1h))
         }
         return OiAnalysis(oiChangePct1h, score)
     }
