@@ -1,0 +1,42 @@
+name: Build APK
+
+# Tetikleyiciler:
+#  - main'e her push/PR'da otomatik derleme
+#  - Actions sekmesinden manuel "Run workflow" butonu ile istediğin an derleme
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK platform 36 (compileSdk gereksinimi)
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" --sdk_root=$ANDROID_HOME
+
+      - name: Grant gradlew permission
+        run: chmod +x gradlew
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: glasspro-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

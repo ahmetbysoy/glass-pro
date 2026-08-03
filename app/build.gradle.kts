@@ -47,7 +47,15 @@ android {
       signingConfig = signingConfigs.getByName("release")
     }
     debug {
-      signingConfig = signingConfigs.getByName("debugConfig")
+      // Local geliştirme makinesinde kök dizinde bir debug.keystore varsa onu
+      // kullan; yoksa (CI ortamı, GitHub Actions veya ilk açılış) AGP'nin
+      // otomatik ürettiği ~/.android/debug.keystore'a düş. Bu sayede keystore
+      // dosyası repository'ye girmek zorunda kalmaz ve CI'da build fail olmaz.
+      signingConfig = if (file("${rootDir}/debug.keystore").exists()) {
+        signingConfigs.getByName("debugConfig")
+      } else {
+        signingConfigs.getByName("debug")
+      }
     }
   }
 
