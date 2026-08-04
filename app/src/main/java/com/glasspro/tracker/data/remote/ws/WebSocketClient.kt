@@ -133,55 +133,75 @@ class WebSocketClient(
      * enters backoff.
      */
     private suspend fun openConnection(): Boolean = withContext(Dispatchers.IO) {
-        val handshake = CompletableDeferred<Boolean>()
-        val request = Request.Builder().url(url).build()
+        try {
+            val handshake = CompletableDeferred<Boolean>()
+            val request = Request.Builder().url(url).build()
 
-        val listener = object : WebSocketListener() {
-            override fun onOpen(webSocket: WebSocket, response: Response) {
-                closed = false
-                _state.value = WsConnectionState.SUBSCRIBING
-                val payload = subscribePayload
-                if (payload != null && !webSocket.send(payload)) {
-                    Log.e(TAG, "$clientName failed to send subscribe frame")
-                }
-                _state.value = WsConnectionState.LIVE
-                lastMessageAtMs.set(System.currentTimeMillis())
-                scheduleHeartbeat()
-                scheduleStalenessMonitor()
-                handshake.complete(true)
-            }
-
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                lastMessageAtMs.set(System.currentTimeMillis())
-                if (_state.value != WsConnectionState.LIVE) {
+            val listener = object : WebSocketListener() {
+                override fun onOpen(webSocket: WebSocket, response: Response) {
+                    closed = false
+                    _state.value = WsConnectionState.SUBSCRIBING
+                    val payload = subscribePayload
+                    if (payload != null) {
+                        try {
+                            if (!webSocket.send(payload)) {
+                                Log.e(TAG, "$clientName failed to send subscribe frame")
+                            }
+                        } catch (e: Exception) {
+                            Log.w(TAG, "$clientName subscribe send error: ${e.message}")
+                        }
+                    }
                     _state.value = WsConnectionState.LIVE
+                    lastMessageAtMs.set(System.currentTimeMillis())
+                    scheduleHeartbeat()
+                    scheduleStalenessMonitor()
+                    handshake.complete(true)
                 }
-                handleProtocolPing(text)?.let { pong ->
-                    webSocket.send(pong)
-                    return
+
+                override fun onMessage(webSocket: WebSocket, text: String) {
+                    lastMessageAtMs.set(System.currentTimeMillis())
+                    if (_state.value != WsConnectionState.LIVE) {
+                        _state.value = WsConnectionState.LIVE
+                    }
+                    handleProtocolPing(text)?.let { pong ->
+                        try {
+                            webSocket.send(pong)
+                        } catch (e: Exception) {
+                            Log.w(TAG, "$clientName pong send error: ${e.message}")
+                        }
+                        return
+                    }
+                    onMessage?.invoke(text)
                 }
-                onMessage?.invoke(text)
+
+                override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+                    closed = true
+                    try {
+                        webSocket.close(1000, null)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "$clientName close error: ${e.message}")
+                    }
+                }
+
+                override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                    closed = true
+                    Log.i(TAG, "$clientName closed ($code): $reason")
+                }
+
+                override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                    closed = true
+                    Log.w(TAG, "$clientName failure: ${t.message}")
+                    handshake.complete(false)
+                }
             }
 
-            override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-                closed = true
-                webSocket.close(1000, null)
-            }
-
-            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                closed = true
-                Log.i(TAG, "$clientName closed ($code): $reason")
-            }
-
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                closed = true
-                Log.w(TAG, "$clientName failure: ${t.message}")
-                handshake.complete(false)
-            }
+            socket = okHttpClient.newWebSocket(request, listener)
+            handshake.await()
+        } catch (e: Exception) {
+            Log.e(TAG, "$clientName open error: ${e.message}")
+            closed = true
+            false
         }
-
-        socket = okHttpClient.newWebSocket(request, listener)
-        handshake.await()
     }
 
     /**
@@ -217,7 +237,11 @@ class WebSocketClient(
                 val payload = protocolPingPayload
                 val ws = socket
                 if (payload != null && ws != null && !closed) {
-                    ws.send(payload)
+                    try {
+                        ws.send(payload)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "$clientName heartbeat send error: ${e.message}")
+                    }
                 }
             }
         }

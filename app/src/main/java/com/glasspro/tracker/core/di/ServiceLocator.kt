@@ -18,6 +18,7 @@ import com.glasspro.tracker.data.remote.adapter.OkxAdapter
 import com.glasspro.tracker.data.remote.rest.RestClient
 import com.glasspro.tracker.data.remote.ws.WebSocketClient
 import com.glasspro.tracker.data.repository.MarketRepository
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

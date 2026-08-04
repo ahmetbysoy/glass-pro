@@ -156,9 +156,17 @@ class MarketRepository(
 
     fun start() {
         for (adapter in adapters) {
-            adapter.start(scope)
+            try {
+                adapter.start(scope)
+            } catch (e: Exception) {
+                android.util.Log.e("MarketRepository", "Adapter start failed: ${adapter.exchangeName}", e)
+            }
         }
-        feedManager.start()
+        try {
+            feedManager.start()
+        } catch (e: Exception) {
+            android.util.Log.e("MarketRepository", "Feed manager start failed", e)
+        }
         scope.launch {
             feedManager.events.collect { event ->
                 handleRealLiquidation(event)
